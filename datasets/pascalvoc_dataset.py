@@ -10,7 +10,6 @@ class Param:
     buffer_size = 1024
     prefetch_size = 8
     data_dir = ''
-    nb_classes = 20
     nb_samples_train = None
     nb_samples_eval = None
     nb_bboxs_max = None

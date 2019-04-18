@@ -1,3 +1,6 @@
+import sys
+sys.path.append('.')
+
 import tensorflow as tf
 from networks.peleenet_ssd.peleenet import PeleeNetClassify
 from networks.peleenet_ssd.peleenet_ssd import PeleeNetSSD

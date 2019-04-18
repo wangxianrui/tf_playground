@@ -1,7 +1,8 @@
 import numpy as np
 
 
-def get_layer_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio, offset):
+def get_layer_anchors(image_size, layer_shape, min_size, max_size,
+                      anchor_ratio, offset):
     if isinstance(image_size, int):
         image_size = (image_size, image_size)
     if isinstance(layer_shape, int):
@@ -24,10 +25,13 @@ def get_layer_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio,
     return x_image, y_image, np.array(w_image), np.array(h_image)
 
 
-def get_all_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio, offset):
+def get_all_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio,
+                    offset):
     all_anchors = []
     for i in range(len(layer_shape)):
-        layer_anchors = get_layer_anchors(image_size, layer_shape[i], min_size[i], max_size[i], anchor_ratio[i], offset)
+        layer_anchors = get_layer_anchors(image_size, layer_shape[i],
+                                          min_size[i], max_size[i],
+                                          anchor_ratio[i], offset)
         all_anchors.append(layer_anchors)
     return all_anchors
 
