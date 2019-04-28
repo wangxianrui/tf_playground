@@ -1,13 +1,14 @@
-import tensorflow as tf
-import os
 import math
+import os
 import xml.etree.ElementTree as ET
-from .pascalvoc_util import *
 
-data_dir = None
+from pascalvoc_util import *
+
+data_dir = 'D:\dataset\VOCdevkit'
 records_path = os.path.join(data_dir, 'tfrecords')
 ignore_difficult_instances = False
 num_samples_per_file = 1000
+max_bbox_per_image = 0
 
 
 def dict_to_tf_example(xml_data):
@@ -26,6 +27,9 @@ def dict_to_tf_example(xml_data):
     poses = []
     difficult_obj = []
     if 'object' in xml_data:
+        global max_bbox_per_image
+        if len(xml_data['object']) > max_bbox_per_image:
+            max_bbox_per_image = len(xml_data['object'])
         for obj in xml_data['object']:
             difficult = bool(int(obj['difficult']))
             if ignore_difficult_instances and difficult:
@@ -67,7 +71,7 @@ def write_tfrecords(is_training, year):
     image_list = read_examples_list(image_list_path)
     record_nums = math.ceil(len(image_list) / num_samples_per_file)
 
-    for i in range(record_nums):
+    for i in range(int(record_nums)):
         file_name = record_file_name.format(year, i, record_nums)
         writer = tf.io.TFRecordWriter(os.path.join(records_path, file_name))
         images = image_list[i * num_samples_per_file: (i + 1) * num_samples_per_file]
@@ -83,9 +87,14 @@ def write_tfrecords(is_training, year):
             example = dict_to_tf_example(xml_data)
             writer.write(example.SerializeToString())
         writer.close()
+    return len(image_list)
 
 
 tf.logging.set_verbosity(tf.logging.INFO)
-write_tfrecords(False, 'VOC2007')
-write_tfrecords(True, 'VOC2007')
-write_tfrecords(True, 'VOC2012')
+nb_test_2007 = write_tfrecords(False, 'VOC2007')
+nb_traival_2007 = write_tfrecords(True, 'VOC2007')
+# nb_trainval_2012 = write_tfrecords(True, 'VOC2012')
+print(nb_test_2007)
+print(nb_traival_2007)
+# print(nb_trainval_2012)
+print(max_bbox_per_image)

@@ -181,7 +181,7 @@ def ssd_random_sample_patch(image, labels, bboxes, ratio_list=[0.1, 0.3, 0.5, 0.
             w = tf.maximum(int_xmax - int_xmin, 0.)
             inter_vol = h * w
             union_vol = (roi[3] - roi[1]) * (roi[2] - roi[0]) + (
-                        (bboxes[:, 2] - bboxes[:, 0]) * (bboxes[:, 3] - bboxes[:, 1]) - inter_vol)
+                    (bboxes[:, 2] - bboxes[:, 0]) * (bboxes[:, 3] - bboxes[:, 1]) - inter_vol)
             jaccard = tf.div(inter_vol, union_vol)
             return jaccard
 
@@ -242,8 +242,8 @@ def ssd_random_sample_patch(image, labels, bboxes, ratio_list=[0.1, 0.3, 0.5, 0.
                 return tf.logical_or(tf.logical_or(tf.logical_and(
                     tf.reduce_sum(tf.cast(jaccard_with_anchors(roi, mask_bboxes) < min_iou, tf.int32)) > 0,
                     tf.less(index, max_attempt)),
-                                                   tf.less(index, 1)),
-                                     tf.less(tf.shape(mask_labels)[0], 1))
+                    tf.less(index, 1)),
+                    tf.less(tf.shape(mask_labels)[0], 1))
 
             def body(index, roi, mask_labels, mask_bboxes):
                 roi, mask_labels, mask_bboxes = check_roi_center(width, height, labels, bboxes)

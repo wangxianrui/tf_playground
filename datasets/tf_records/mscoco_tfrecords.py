@@ -1,10 +1,10 @@
-"""
-import os
 import json
 import math
+import os
+
 import tensorflow as tf
-from pycocotools.coco import COCO
 from mscoco_util import *
+from pycocotools.coco import COCO
 
 data_dir = 'D:/dataset/mscoco_2017'
 output_path = os.path.join(data_dir, 'tfrecords')
@@ -22,9 +22,8 @@ def json_to_tf_example(img_dir, coco_img, coco_ann):
     xmax = []
     ymax = []
     classes = []
-    for ann in coco_ann:
-
-
+    print(coco_ann)
+    input()
 
     return 0
 
@@ -64,4 +63,3 @@ def write_tfrecords(is_train):
 
 write_tfrecords(is_train=True)
 write_tfrecords(is_train=False)
-"""

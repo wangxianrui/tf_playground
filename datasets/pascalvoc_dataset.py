@@ -1,5 +1,7 @@
-import tensorflow as tf
 import os
+
+import tensorflow as tf
+
 from .preprocess.ssd_preprocessing import preprocess_image
 
 
@@ -9,10 +11,10 @@ class Param:
     nb_threads = 8
     buffer_size = 1024
     prefetch_size = 8
-    data_dir = ''
-    nb_samples_train = None
-    nb_samples_eval = None
-    nb_bboxs_max = None
+    data_dir = r'D:\dataset\VOCdevkit\tfrecords'
+    nb_samples_train = 5011
+    nb_samples_eval = 4952
+    nb_bboxs_max = 50
 
 
 def parse_example_proto(example_serialized):
@@ -115,15 +117,15 @@ def parse_fn(example_serialized, is_train, img_size):
         bboxes_raw = tf.boolean_mask(bboxes_raw, mask)
 
     # pre-process image, labels, and bboxes
+    if isinstance(img_size, int):
+        img_size = [img_size, img_size]
     if is_train:
-        out_shape = [img_size, img_size]
         image, labels, bboxes = preprocess_image(
-            image_raw, labels_raw, bboxes_raw, out_shape,
+            image_raw, labels_raw, bboxes_raw, img_size,
             is_training=True, data_format='channels_last', output_rgb=False)
     else:
-        out_shape = [img_size, img_size]
         image = preprocess_image(
-            image_raw, labels_raw, bboxes_raw, out_shape,
+            image_raw, labels_raw, bboxes_raw, img_size,
             is_training=False, data_format='channels_last', output_rgb=False)
         labels, bboxes = labels_raw, bboxes_raw
 
@@ -139,9 +141,9 @@ class PascalVocDataset:
     def __init__(self, is_train, img_size):
         assert Param.data_dir is not None, '<data_dir> must not be None'
         if is_train:
-            self.file_pattern = os.path.join(Param.data_dir, 'trainval-*-of-*')
+            self.file_pattern = os.path.join(Param.data_dir, '*trainval*of*')
         else:
-            self.file_pattern = os.path.join(Param.data_dir, 'test-*-of-*')
+            self.file_pattern = os.path.join(Param.data_dir, '*test*of*')
         self.dataset_fn = lambda x: tf.data.TFRecordDataset(x)
         self.parse_fn = lambda x: parse_fn(x, is_train, img_size)
 
@@ -152,3 +154,17 @@ class PascalVocDataset:
         dataset = dataset.map(self.parse_fn, num_parallel_calls=Param.nb_threads)
         dataset = dataset.shuffle(Param.buffer_size).batch(batch_size).repeat().prefetch(Param.prefetch_size)
         return dataset.make_one_shot_iterator()
+
+    def check_count(self):
+        nums = 0
+        filenames = tf.gfile.Glob(os.path.join(Param.data_dir, '*trainval*of*'))
+        for name in filenames:
+            for string_record in tf.io.tf_record_iterator(name):
+                nums += 1
+        print(nums)
+        nums = 0
+        filenames = tf.gfile.Glob(os.path.join(Param.data_dir, '*test*of*'))
+        for name in filenames:
+            for string_record in tf.io.tf_record_iterator(name):
+                nums += 1
+        print(nums)
