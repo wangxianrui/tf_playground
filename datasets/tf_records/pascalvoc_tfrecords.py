@@ -4,15 +4,18 @@ import xml.etree.ElementTree as ET
 
 from pascalvoc_util import *
 
-data_dir = 'D:\dataset\VOCdevkit'
-records_path = os.path.join(data_dir, 'tfrecords')
+data_dir = 'C:\my_files\DATA\VOCdevkit'
+output_path = os.path.join(data_dir, 'tfrecords')
+if not os.path.exists(output_path):
+    os.makedirs(output_path)
 ignore_difficult_instances = False
 num_samples_per_file = 1000
 max_bbox_per_image = 0
 
 
 def dict_to_tf_example(xml_data):
-    img_path = os.path.join(data_dir, xml_data['folder'], 'JPEGImages', xml_data['filename'])
+    img_path = os.path.join(data_dir, xml_data['folder'], 'JPEGImages',
+                            xml_data['filename'])
     with tf.gfile.GFile(img_path, 'rb') as fid:
         encoded_jpg = fid.read()
     width = int(xml_data['size']['width'])
@@ -22,7 +25,7 @@ def dict_to_tf_example(xml_data):
     ymin = []
     xmax = []
     ymax = []
-    classes = []
+    labels = []
     truncated = []
     poses = []
     difficult_obj = []
@@ -39,46 +42,52 @@ def dict_to_tf_example(xml_data):
             ymin.append(float(obj['bndbox']['ymin']) / height)
             xmax.append(float(obj['bndbox']['xmax']) / width)
             ymax.append(float(obj['bndbox']['ymax']) / height)
-            classes.append(label_map[obj['name']])
+            labels.append(label_map[obj['name']])
             truncated.append(int(obj['truncated']))
             poses.append(obj['pose'].encode('utf8'))
 
-    example = tf.train.Example(features=tf.train.Features(feature={
-        'image/encoded': bytes_feature(encoded_jpg),
-        'image/filename': bytes_feature(xml_data['filename'].encode('utf8')),
-        'image/height': int64_feature(height),
-        'image/width': int64_feature(width),
-        'image/object/bbox/xmin': float_list_feature(xmin),
-        'image/object/bbox/xmax': float_list_feature(xmax),
-        'image/object/bbox/ymin': float_list_feature(ymin),
-        'image/object/bbox/ymax': float_list_feature(ymax),
-        'image/object/class/label': int64_list_feature(classes),
-        'image/object/difficult': int64_list_feature(difficult_obj),
-        'image/object/truncated': int64_list_feature(truncated),
-    }))
+    example = tf.train.Example(
+        features=tf.train.Features(
+            feature={
+                'image/encoded': bytes_feature(encoded_jpg),
+                'image/filename': \
+                    bytes_feature(xml_data['filename'].encode('utf8')),
+                'image/height': int64_feature(height),
+                'image/width': int64_feature(width),
+                'image/bbox/xmin': float_list_feature(xmin),
+                'image/bbox/xmax': float_list_feature(xmax),
+                'image/bbox/ymin': float_list_feature(ymin),
+                'image/bbox/ymax': float_list_feature(ymax),
+                'image/bbox/label': int64_list_feature(labels),
+                'image/bbox/difficult': int64_list_feature(difficult_obj),
+                'image/bbox/truncated': int64_list_feature(truncated),
+            }))
     return example
 
 
 def write_tfrecords(is_training, year):
     if is_training:
         record_file_name = '{}_trainval_{:03d}_of_{:03d}'
-        image_list_path = os.path.join(data_dir, year, 'ImageSets', 'Main', 'aeroplane_' + 'trainval' + '.txt')
+        image_list_path = os.path.join(data_dir, year, \
+            'ImageSets', 'Main', 'aeroplane_' + 'trainval' + '.txt')
 
     else:
         record_file_name = '{}_test_{:03d}_of_{:03d}'
-        image_list_path = os.path.join(data_dir, year, 'ImageSets', 'Main', 'aeroplane_' + 'test' + '.txt')
+        image_list_path = os.path.join(data_dir, year, \
+            'ImageSets', 'Main', 'aeroplane_' + 'test' + '.txt')
     annotations_dir = os.path.join(data_dir, year, 'Annotations')
     image_list = read_examples_list(image_list_path)
     record_nums = math.ceil(len(image_list) / num_samples_per_file)
 
     for i in range(int(record_nums)):
         file_name = record_file_name.format(year, i, record_nums)
-        writer = tf.io.TFRecordWriter(os.path.join(records_path, file_name))
-        images = image_list[i * num_samples_per_file: (i + 1) * num_samples_per_file]
-        tf.logging.info('creating {}, with examples {}'.format(file_name, len(images)))
+        writer = tf.io.TFRecordWriter(os.path.join(output_path, file_name))
+        images = image_list[i * num_samples_per_file:(i + 1) *
+                            num_samples_per_file]
+        print('creating {}, with examples {}'.format(file_name, len(images)))
         for idx, image in enumerate(images):
             if idx % 100 == 0:
-                tf.logging.info('On image %d of %d', idx, len(images))
+                print('On image %d of %d', idx, len(images))
             path = os.path.join(annotations_dir, image + '.xml')
             with tf.gfile.GFile(path, 'r') as fid:
                 xml_str = fid.read()
@@ -90,11 +99,10 @@ def write_tfrecords(is_training, year):
     return len(image_list)
 
 
-tf.logging.set_verbosity(tf.logging.INFO)
 nb_test_2007 = write_tfrecords(False, 'VOC2007')
 nb_traival_2007 = write_tfrecords(True, 'VOC2007')
-# nb_trainval_2012 = write_tfrecords(True, 'VOC2012')
+nb_trainval_2012 = write_tfrecords(True, 'VOC2012')
 print(nb_test_2007)
 print(nb_traival_2007)
-# print(nb_trainval_2012)
+print(nb_trainval_2012)
 print(max_bbox_per_image)

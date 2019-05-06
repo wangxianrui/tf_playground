@@ -1,8 +1,4 @@
-from parameters import DetectParam as Param
 from .bbox_operator import *
-
-sess = tf.Session()
-
 
 def get_layer_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio, offset):
     '''
@@ -31,15 +27,15 @@ def get_layer_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio,
     return x_image, y_image, tf.convert_to_tensor(w_image), tf.convert_to_tensor(h_image)
 
 
-def get_all_anchors():
+def get_all_anchors(image_size, layer_shape, min_size, max_size, anchor_ratio, offset):
     '''
     :return:
         all_anchors with shape T * 4
     '''
     all_anchors = []
-    for i in range(len(Param.layer_shape)):
-        centerx, centery, width, height = get_layer_anchors(Param.image_size, Param.layer_shape[i], Param.min_size[i],
-                                                            Param.max_size[i], Param.anchor_ratio[i], Param.offset)
+    for i in range(len(layer_shape)):
+        centerx, centery, width, height = get_layer_anchors(image_size, layer_shape[i], min_size[i],
+                                                            max_size[i], anchor_ratio[i], offset)
         anchors = center2point(centerx, centery, width, height)
         anchors = tf.stack(anchors, axis=-1)
         all_anchors.append(tf.reshape(anchors, [-1, 4]))

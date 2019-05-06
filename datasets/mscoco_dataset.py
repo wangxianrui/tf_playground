@@ -9,10 +9,10 @@ class Param:
     nb_threads = 8
     buffer_size = 1024
     prefetch_size = 8
-    data_dir = 'C:\my_files\DATA\VOCdevkit'
-    nb_samples_train = 5011 + 11540
+    data_dir = 'C:\my_files\DATA\MSCOCO'
+    nb_samples_train = 117266
     nb_samples_eval = 4952
-    nb_bboxs_max = 56
+    nb_bboxs_max = 93
 
 
 def parse_example_proto(example_serialized):
@@ -38,8 +38,6 @@ def parse_example_proto(example_serialized):
         'image/bbox/xmax': tf.VarLenFeature(dtype=tf.float32),
         'image/bbox/ymax': tf.VarLenFeature(dtype=tf.float32),
         'image/bbox/label': tf.VarLenFeature(dtype=tf.int64),
-        'image/bbox/difficult': tf.VarLenFeature(dtype=tf.int64),
-        'image/bbox/truncated': tf.VarLenFeature(dtype=tf.int64),
     }
     features = tf.parse_single_example(example_serialized, feature_map)
 
@@ -63,12 +61,6 @@ def pack_annotations(bboxes, labels, difficults=None, truncateds=None):
     labels = tf.cast(tf.expand_dims(labels, 1), tf.float32)
     flags = tf.ones(tf.shape(labels))
     objects = tf.concat([flags, bboxes, labels], axis=1)
-
-    # pack <difficults> & <truncateds> if supplied
-    if difficults is not None and truncateds is not None:
-        difficults = tf.cast(tf.expand_dims(difficults, 1), tf.float32)
-        truncateds = tf.cast(tf.expand_dims(truncateds, 1), tf.float32)
-        objects = tf.concat([objects, difficults, truncateds], axis=1)
 
     # pad to fixed number of bounding boxes
     pad_size = Param.nb_bboxs_max - tf.shape(objects)[0]
@@ -98,30 +90,12 @@ def parse_fn(example_serialized, is_train, img_size):
     filename = features['image/filename']
     shape = tf.convert_to_tensor(
         [features['image/height'], features['image/width'], 3])
-
     xmins = tf.expand_dims(features['image/bbox/xmin'].values, 1)
     ymins = tf.expand_dims(features['image/bbox/ymin'].values, 1)
     xmaxs = tf.expand_dims(features['image/bbox/xmax'].values, 1)
     ymaxs = tf.expand_dims(features['image/bbox/ymax'].values, 1)
     bboxes_raw = tf.concat([ymins, xmins, ymaxs, xmaxs], axis=1)
-
     labels_raw = tf.cast(features['image/bbox/label'].values, tf.int64)
-    difficults = tf.cast(features['image/bbox/difficult'].values, tf.int64)
-
-    # filter out difficult objects
-    if is_train:
-        # if all is difficult, then keep the first one; otherwise, use all the non-difficult objects
-        mask = tf.cond(
-            tf.count_nonzero(difficults, dtype=tf.int32) <
-            tf.shape(difficults)[0], lambda: difficults < tf.ones_like(
-                difficults), lambda: tf.one_hot(
-                    0,
-                    tf.shape(difficults)[0],
-                    on_value=True,
-                    off_value=False,
-                    dtype=tf.bool))
-        labels_raw = tf.boolean_mask(labels_raw, mask)
-        bboxes_raw = tf.boolean_mask(bboxes_raw, mask)
 
     # pre-process image, labels, and bboxes
     if isinstance(img_size, int):
@@ -152,8 +126,8 @@ def parse_fn(example_serialized, is_train, img_size):
     return img_info, image, groundtruth
 
 
-class PascalVocDataset:
-    """Pascal VOC dataset."""
+class MSCOCODataset:
+    """MSCOCODataset."""
 
     def __init__(self, is_train, img_size):
         assert Param.data_dir is not None, '<data_dir> must not be None'
