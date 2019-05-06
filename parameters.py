@@ -20,7 +20,7 @@ class DetectParam:
     # size or shape with dim [w, h] [x, y]
     image_size = [320, 320]
     num_classes = 21
-    batch_size = 4
+    batch_size = 1
     summary_op = 500
     save_step = 1e4
 
@@ -36,10 +36,10 @@ class DetectParam:
     layer_step = [8, 16, 32, 64, 100, 300]
     anchor_depth_per_layer = [6, 6, 6, 6, 6, 6]
     anchor_ratio = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
-    min_size = [30, 60, 111, 162, 213, 264]
-    max_size = [60, 111, 162, 213, 264, 315]
-    variance = [0.1, 0.2]
+    anchor_size = [[30, 60], [60, 111], [111, 162], [162, 213], [213, 264],
+                   [264, 315]]
+    prior_scaling = [0.1, 0.2]
     offset = 0.5
-    match_low = 0.3
-    match_high = 0.7
-    match_ignore = True
+    matching_low = 0.3
+    matching_high = 0.7
+    matching_ignore = True

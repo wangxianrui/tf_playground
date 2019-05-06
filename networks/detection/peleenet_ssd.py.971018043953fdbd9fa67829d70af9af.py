@@ -137,7 +137,5 @@ class PeleeNetSSD:
             groundtruth, self.all_anchors)
         print(target_location)
 
-        exit()
-
     def calc_prediction(self):
         pass
